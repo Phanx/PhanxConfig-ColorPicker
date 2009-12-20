@@ -1,19 +1,20 @@
 --[[--------------------------------------------------------------------
 	PhanxConfig-ColorPicker
-	Simple color picker widget generator. Requires LibStub.
+	Simple color picker widget generator.
 	Based on OmniCC_Options by Tuller.
+	Requires LibStub.
 ----------------------------------------------------------------------]]
 
-local lib, oldminor = LibStub:NewLibrary("PhanxConfig-ColorPicker", 1)
+local lib, oldminor = LibStub:NewLibrary("PhanxConfig-ColorPicker", 2)
 if not lib then return end
 
 local function OnEnter(self)
 	local color = NORMAL_FONT_COLOR
 	self.bg:SetVertexColor(color.r, color.g, color.b)
 
-	if self.hint then
+	if self.desc then
 		GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-		GameTooltip:SetText(self.hint, nil, nil, nil, nil, true)
+		GameTooltip:SetText(self.desc, nil, nil, nil, nil, true)
 	end
 end
 
@@ -39,7 +40,7 @@ local function OnClick(self)
 end
 
 local function SetColor(self, r, g, b)
-	self.swatch:SetVertexColor(r, g, b)
+	self.swatch:SetVertexColor(r, g b)
 	if not ColorPickerFrame:IsShown() then
 		self:SetValue(r, g, b)
 	end
