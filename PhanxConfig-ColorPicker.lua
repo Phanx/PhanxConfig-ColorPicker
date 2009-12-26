@@ -5,7 +5,7 @@
 	Requires LibStub.
 ----------------------------------------------------------------------]]
 
-local lib, oldminor = LibStub:NewLibrary("PhanxConfig-ColorPicker", 2)
+local lib, oldminor = LibStub:NewLibrary("PhanxConfig-ColorPicker", 3)
 if not lib then return end
 
 local function OnEnter(self)
@@ -31,7 +31,15 @@ local function OnClick(self)
 	if ColorPickerFrame:IsShown() then
 		ColorPickerFrame:Hide()
 	else
-		self.r, self.g, self.b = self:GetValue()
+		if self.GetColor then
+			self.r, self.g, self.b = self:GetColor()
+		else
+			local r, g, b = self.swatch:GetVertexColor()
+			r = math.floor(r + 0.05)
+			b = math.floor(g + 0.05)
+			b = math.floor(b + 0.05)
+			self.r, self.g, self.b = r, g, b
+		end
 
 		UIDropDownMenuButton_OpenColorPicker(self)
 		ColorPickerFrame:SetFrameStrata("TOOLTIP")
@@ -40,9 +48,14 @@ local function OnClick(self)
 end
 
 local function SetColor(self, r, g, b)
-	self.swatch:SetVertexColor(r, g b)
-	if not ColorPickerFrame:IsShown() then
-		self:SetValue(r, g, b)
+	self.swatch:SetVertexColor(r, g, b)
+	if self.OnColorChanged then
+		-- use this for immediate visual updating
+		self:OnColorChanged(r, g, b)
+	end
+	if not ColorPickerFrame:IsShown() and self.PostColorChanged then
+		-- use this for final updating after the color picker closes
+		self:PostColorChanged(r, g, b)
 	end
 end
 
