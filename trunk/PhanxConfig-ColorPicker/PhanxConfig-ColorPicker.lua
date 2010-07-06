@@ -9,7 +9,9 @@
 	its internals may change at any time without notice.
 ----------------------------------------------------------------------]]
 
-local lib, oldminor = LibStub:NewLibrary("PhanxConfig-ColorPicker", 3)
+local MINOR_VERSION = tonumber(("$Revision$"):match("%d+"))
+
+local lib, oldminor = LibStub:NewLibrary("PhanxConfig-ColorPicker", MINOR_VERSION)
 if not lib then return end
 
 local function OnEnter(self)
