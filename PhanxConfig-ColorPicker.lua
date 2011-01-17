@@ -68,41 +68,37 @@ end
 function lib.CreateColorPicker(parent, name)
 	local frame = CreateFrame("Button", nil, parent)
 	frame:SetHeight(19)
-	frame:SetWidth(100)
 
 	local swatch = frame:CreateTexture(nil, "OVERLAY")
 	swatch:SetTexture("Interface\\ChatFrame\\ChatFrameColorSwatch")
 	swatch:SetPoint("LEFT")
 	swatch:SetWidth(19)
 	swatch:SetHeight(19)
+	frame.swatch = swatch
 
 	local bg = frame:CreateTexture(nil, "BACKGROUND")
 	bg:SetTexture(1, 1, 1)
 	bg:SetPoint("CENTER", swatch)
 	bg:SetWidth(16)
 	bg:SetHeight(16)
+	frame.bg = bg
 
 	local label = frame:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
 	label:SetPoint("LEFT", swatch, "RIGHT", 4, 1)
 	label:SetHeight(19)
 	label:SetText(name)
+	frame.label = label
+
+	local width = math.max( 19 + 4 + label:GetStringWidth(), 100 )
+	frame:SetWidth(width)
 
 	frame.SetColor = SetColor
-	frame.swatchFunc = function() frame:SetColor(ColorPickerFrame:GetColorRGB()) end
-	frame.cancelFunc = function() frame:SetColor(frame.r, frame.g, frame.b) end
+	frame.swatchFunc = function() frame:SetColor( ColorPickerFrame:GetColorRGB() ) end
+	frame.cancelFunc = function() frame:SetColor( frame.r, frame.g, frame.b ) end
 
 	frame:SetScript("OnClick", OnClick)
 	frame:SetScript("OnEnter", OnEnter)
 	frame:SetScript("OnLeave", OnLeave)
-
-	local width = 19 + 4 + label:GetStringWidth()
-	if width > 100 then
-		frame:SetWidth(width)
-	end
-
-	frame.swatch = swatch
-	frame.bg = bg
-	frame.label = label
 
 	return frame
 end
