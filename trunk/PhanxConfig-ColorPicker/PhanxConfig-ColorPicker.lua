@@ -41,9 +41,9 @@ local function OnClick(self)
 			self.r, self.g, self.b = self:GetColor()
 		else
 			local r, g, b = self.swatch:GetVertexColor()
-			r = math.floor(r + 0.05)
-			b = math.floor(g + 0.05)
-			b = math.floor(b + 0.05)
+			r = math.floor(r * 100 + 0.5) / 100
+			b = math.floor(g * 100 + 0.5) / 100
+			b = math.floor(b * 100 + 0.5) / 100
 			self.r, self.g, self.b = r, g, b
 		end
 
