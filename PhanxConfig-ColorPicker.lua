@@ -66,7 +66,7 @@ local function SetColor(self, r, g, b)
 end
 
 function lib.CreateColorPicker(parent, name, desc)
-	assert( type(parent) == "table" and parent.GetFrameType, "PhanxConfig-ColorPicker: Parent is not a valid frame!" )
+	assert( type(parent) == "table" and parent.CreateFontString, "PhanxConfig-ColorPicker: Parent is not a valid frame!" )
 	if type(name) ~= "string" then name = nil end
 	if type(desc) ~= "string" then desc = nil end
 
