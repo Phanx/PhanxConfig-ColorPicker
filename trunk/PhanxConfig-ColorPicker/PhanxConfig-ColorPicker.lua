@@ -93,8 +93,7 @@ function lib.CreateColorPicker(parent, name, desc)
 	label:SetText(name)
 	frame.label = label
 
-	local width = math.max( 19 + 4 + label:GetStringWidth(), 100 )
-	frame:SetWidth(width)
+	frame:SetWidth( math.min( 186, math.max( 19 + 4 + label:GetStringWidth(), 100 ) ) )
 
 	frame.SetColor = SetColor
 	frame.swatchFunc = function() frame:SetColor( ColorPickerFrame:GetColorRGB() ) end
