@@ -31,41 +31,47 @@ local function OnLeave(self)
 	GameTooltip:Hide()
 end
 
+local prev = { }
 local function OnClick(self)
 	OnLeave(self)
 
 	if ColorPickerFrame:IsShown() then
 		ColorPickerFrame:Hide()
 	else
+		local r, g, b, a
 		if self.GetColor then
-			self.r, self.g, self.b = self:GetColor()
+			r, g, b, a = self:GetColor()
 		else
-			local r, g, b = self.swatch:GetVertexColor()
-			r = math.floor(r * 100 + 0.5) / 100
-			b = math.floor(g * 100 + 0.5) / 100
-			b = math.floor(b * 100 + 0.5) / 100
-			self.r, self.g, self.b = r, g, b
+			local r, g, b, a = self.swatch:GetVertexColor()
+			r, g, b, a = tonumber(format("%.2f", r)), tonumber(format("%.2f", g)), tonumber(format("%.2f", b)), tonumber(format("%.2f", a))
 		end
+		self.r, self.g, self.b, self.opacity = r, g, b, a
 
-		UIDropDownMenuButton_OpenColorPicker(self)
+		OpenColorPicker(self)
 		ColorPickerFrame:SetFrameStrata("TOOLTIP")
 		ColorPickerFrame:Raise()
 	end
 end
 
-local function SetColor(self, r, g, b)
-	self.swatch:SetVertexColor(r, g, b)
+local function SetColor(self, r, g, b, a)
+	if not a or not self.hasOpacity then
+		a = 1
+	end
+	r, g, b, a = tonumber(format("%.2f", r)), tonumber(format("%.2f", g)), tonumber(format("%.2f", b)), tonumber(format("%.2f", a))
+
+	self.swatch:SetVertexColor(r, g, b, a)
+	self.bg:SetAlpha(a)
 	if self.OnColorChanged then
 		-- use this for immediate visual updating
-		self:OnColorChanged(r, g, b)
+		self:OnColorChanged(r, g, b, a)
 	end
 	if not ColorPickerFrame:IsShown() and self.PostColorChanged then
 		-- use this for final updating after the color picker closes
-		self:PostColorChanged(r, g, b)
+		self:PostColorChanged(r, g, b, a)
 	end
 end
 
-function lib.CreateColorPicker(parent, name, desc)
+function lib.CreateColorPicker(parent, name, desc, hasOpacity)
 	assert( type(parent) == "table" and parent.CreateFontString, "PhanxConfig-ColorPicker: Parent is not a valid frame!" )
 	if type(name) ~= "string" then name = nil end
 	if type(desc) ~= "string" then desc = nil end
@@ -96,8 +102,23 @@ function lib.CreateColorPicker(parent, name, desc)
 	frame:SetWidth( math.min( 186, math.max( 19 + 4 + label:GetStringWidth(), 100 ) ) )
 
 	frame.SetColor = SetColor
-	frame.swatchFunc = function() frame:SetColor( ColorPickerFrame:GetColorRGB() ) end
-	frame.cancelFunc = function() frame:SetColor( frame.r, frame.g, frame.b ) end
+
+	frame.swatchFunc = function()
+		local r, g, b = ColorPickerFrame:GetColorRGB()
+		local a = OpacitySliderFrame:GetValue()
+		frame:SetColor( r, g, b, a )
+	end
+
+	frame.hasOpacity = hasOpacity
+	frame.opacityFunc = function()
+		local r, g, b = ColorPickerFrame:GetColorRGB()
+		local a = OpacitySliderFrame:GetValue()
+		frame:SetColor( r, g, b, a )
+	end
+
+	frame.cancelFunc = function()
+		frame:SetColor( frame.r, frame.g, frame.b, frame.hasOpacity and frame.opacity or 1 )
+	end
 
 	frame:SetScript("OnClick", OnClick)
 	frame:SetScript("OnEnter", OnEnter)
