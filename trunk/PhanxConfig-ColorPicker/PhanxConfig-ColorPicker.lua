@@ -14,7 +14,21 @@ local MINOR_VERSION = tonumber(("$Revision$"):match("%d+"))
 local lib, oldminor = LibStub:NewLibrary("PhanxConfig-ColorPicker", MINOR_VERSION)
 if not lib then return end
 
-local function OnEnter(self)
+local OnClick, OnEnter, OnLeave, GetValue, SetValue
+
+function OnClick(self)
+	OnLeave(self)
+	if ColorPickerFrame:IsShown() then
+		ColorPickerFrame:Hide()
+	else
+		self.r, self.g, self.b, self.opacity = self:GetValue()
+		OpenColorPicker(self)
+		ColorPickerFrame:SetFrameStrata("TOOLTIP")
+		ColorPickerFrame:Raise()
+	end
+end
+
+function OnEnter(self)
 	local color = NORMAL_FONT_COLOR
 	self.bg:SetVertexColor(color.r, color.g, color.b)
 
@@ -24,50 +38,39 @@ local function OnEnter(self)
 	end
 end
 
-local function OnLeave(self)
+function OnLeave(self)
 	local color = HIGHLIGHT_FONT_COLOR
 	self.bg:SetVertexColor(color.r, color.g, color.b)
 
 	GameTooltip:Hide()
 end
 
-local prev = { }
-local function OnClick(self)
-	OnLeave(self)
-
-	if ColorPickerFrame:IsShown() then
-		ColorPickerFrame:Hide()
-	else
-		local r, g, b, a
-		if self.GetColor then
-			r, g, b, a = self:GetColor()
-		else
-			local r, g, b, a = self.swatch:GetVertexColor()
-			r, g, b, a = tonumber(format("%.2f", r)), tonumber(format("%.2f", g)), tonumber(format("%.2f", b)), tonumber(format("%.2f", a))
-		end
-		self.r, self.g, self.b, self.opacity = r, g, b, a
-
-		OpenColorPicker(self)
-		ColorPickerFrame:SetFrameStrata("TOOLTIP")
-		ColorPickerFrame:Raise()
-	end
+function GetValue(self)
+	local r, g, b, a = self.swatch:GetVertexColor()
+	return floor(r * 100 + 0.5) / 100, floor(g * 100 + 0.5) / 100, floor(b * 100 + 0.5) / 100, floor(a * 100 + 0.5) / 100
 end
 
-local function SetColor(self, r, g, b, a)
-	if not a or not self.hasOpacity then
-		a = 1
-	end
-	r, g, b, a = tonumber(format("%.2f", r)), tonumber(format("%.2f", g)), tonumber(format("%.2f", b)), tonumber(format("%.2f", a))
+function SetValue(self, r, g, b, a)
+	r = floor(r * 100 + 0.5) / 100
+	g = floor(g * 100 + 0.5) / 100
+	b = floor(b * 100 + 0.5) / 100
+	a = a and self.hasOpacity and (floor(a * 100 + 0.5) / 100) or 1
 
 	self.swatch:SetVertexColor(r, g, b, a)
 	self.bg:SetAlpha(a)
-	if self.OnColorChanged then
-		-- use this for immediate visual updating
-		self:OnColorChanged(r, g, b, a)
-	end
-	if not ColorPickerFrame:IsShown() and self.PostColorChanged then
-		-- use this for final updating after the color picker closes
-		self:PostColorChanged(r, g, b, a)
+
+	if self.OnValueChanged then
+		self:OnValueChanged(r, g, b, a)
+	else
+		-- deprecated
+		if self.OnColorChanged then
+			-- use this for immediate visual updating
+			self:OnColorChanged(r, g, b, a)
+		end
+		if not ColorPickerFrame:IsShown() and self.PostColorChanged then
+			-- use this for final updating after the color picker closes
+			self:PostColorChanged(r, g, b, a)
+		end
 	end
 end
 
@@ -77,54 +80,52 @@ function lib.CreateColorPicker(parent, name, desc, hasOpacity)
 	if type(desc) ~= "string" then desc = nil end
 
 	local frame = CreateFrame("Button", nil, parent)
-	frame:SetHeight(19)
+	frame:SetHeight(26)
 
 	local swatch = frame:CreateTexture(nil, "OVERLAY")
 	swatch:SetTexture("Interface\\ChatFrame\\ChatFrameColorSwatch")
-	swatch:SetPoint("LEFT")
-	swatch:SetWidth(19)
-	swatch:SetHeight(19)
+	swatch:SetPoint("LEFT", 5, 1)
+	swatch:SetSize(17, 18)
 	frame.swatch = swatch
 
 	local bg = frame:CreateTexture(nil, "BACKGROUND")
 	bg:SetTexture(1, 1, 1)
-	bg:SetPoint("CENTER", swatch)
-	bg:SetWidth(16)
-	bg:SetHeight(16)
+	bg:SetPoint("LEFT", 5, 1)
+	bg:SetSize(16, 16)
 	frame.bg = bg
 
 	local label = frame:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-	label:SetPoint("LEFT", swatch, "RIGHT", 4, 1)
+	label:SetPoint("LEFT", swatch, "RIGHT", 7, 0)
 	label:SetHeight(19)
 	label:SetText(name)
 	frame.label = label
 
-	frame:SetWidth( math.min( 186, math.max( 19 + 4 + label:GetStringWidth(), 100 ) ) )
-
-	frame.SetColor = SetColor
-
-	frame.swatchFunc = function()
-		local r, g, b = ColorPickerFrame:GetColorRGB()
-		local a = OpacitySliderFrame:GetValue()
-		frame:SetColor( r, g, b, a )
-	end
-
-	frame.hasOpacity = hasOpacity
-	frame.opacityFunc = function()
-		local r, g, b = ColorPickerFrame:GetColorRGB()
-		local a = OpacitySliderFrame:GetValue()
-		frame:SetColor( r, g, b, a )
-	end
-
-	frame.cancelFunc = function()
-		frame:SetColor( frame.r, frame.g, frame.b, frame.hasOpacity and frame.opacity or 1 )
-	end
+	frame:SetWidth(math.min(186, math.max(5 + 16 + 7 + label:GetStringWidth(), 100)))
+	frame:SetMotionScriptsWhileDisabled(true)
 
 	frame:SetScript("OnClick", OnClick)
 	frame:SetScript("OnEnter", OnEnter)
 	frame:SetScript("OnLeave", OnLeave)
 
+	frame.SetColor = SetValue -- deprecated
+
 	frame.desc = desc
+	frame.GetValue = GetValue
+	frame.SetValue = SetValue
+	frame.cancelFunc = function()
+		frame:SetValue(frame.r, frame.g, frame.b, frame.hasOpacity and frame.opacity or 1)
+	end
+	frame.hasOpacity = hasOpacity
+	frame.opacityFunc = function()
+		local r, g, b = ColorPickerFrame:GetColorRGB()
+		local a = OpacitySliderFrame:GetValue()
+		frame:SetValue(r, g, b, a)
+	end
+	frame.swatchFunc = function()
+		local r, g, b = ColorPickerFrame:GetColorRGB()
+		local a = OpacitySliderFrame:GetValue()
+		frame:SetValue(r, g, b, a)
+	end
 
 	return frame
 end
