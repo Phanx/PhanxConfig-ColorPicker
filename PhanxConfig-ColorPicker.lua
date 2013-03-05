@@ -51,6 +51,10 @@ function GetValue(self)
 end
 
 function SetValue(self, r, g, b, a)
+	if type(r) == "table" then
+		r, g, b, a = r.r or r[1], r.g or r[2], r.b or r[3], r.a or r[4]
+	end
+
 	r = floor(r * 100 + 0.5) / 100
 	g = floor(g * 100 + 0.5) / 100
 	b = floor(b * 100 + 0.5) / 100
