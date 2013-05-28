@@ -14,10 +14,10 @@ local MINOR_VERSION = tonumber(("$Revision$"):match("%d+"))
 local lib, oldminor = LibStub:NewLibrary("PhanxConfig-ColorPicker", MINOR_VERSION)
 if not lib then return end
 
-local OnClick, OnEnter, OnLeave, GetValue, SetValue
+local prototype = {}
 
-function OnClick(self)
-	OnLeave(self)
+function prototype:OnClick()
+	self:OnLeave()
 	if ColorPickerFrame:IsShown() then
 		ColorPickerFrame:Hide()
 	else
@@ -28,7 +28,7 @@ function OnClick(self)
 	end
 end
 
-function OnEnter(self)
+function prototype:OnEnter()
 	local color = NORMAL_FONT_COLOR
 	self.bg:SetVertexColor(color.r, color.g, color.b)
 
@@ -38,19 +38,19 @@ function OnEnter(self)
 	end
 end
 
-function OnLeave(self)
+function prototype:OnLeave()
 	local color = HIGHLIGHT_FONT_COLOR
 	self.bg:SetVertexColor(color.r, color.g, color.b)
 
 	GameTooltip:Hide()
 end
 
-function GetValue(self)
+function prototype:GetValue()
 	local r, g, b, a = self.swatch:GetVertexColor()
 	return floor(r * 100 + 0.5) / 100, floor(g * 100 + 0.5) / 100, floor(b * 100 + 0.5) / 100, floor(a * 100 + 0.5) / 100
 end
 
-function SetValue(self, r, g, b, a)
+function prototype:SetValue(r, g, b, a)
 	if type(r) == "table" then
 		r, g, b, a = r.r or r[1], r.g or r[2], r.b or r[3], r.a or r[4]
 	end
@@ -64,9 +64,10 @@ function SetValue(self, r, g, b, a)
 	self.bg:SetAlpha(a)
 
 	if self.OnValueChanged then
+		-- Ignore updates while ColorPickerFrame:IsShown() if desired.
 		self:OnValueChanged(r, g, b, a)
 	else
-		-- deprecated
+		-- Deprecated!!!
 		if self.OnColorChanged then
 			-- use this for immediate visual updating
 			self:OnColorChanged(r, g, b, a)
@@ -107,19 +108,20 @@ function lib.CreateColorPicker(parent, name, desc, hasOpacity)
 	frame:SetWidth(math.min(186, math.max(5 + 16 + 7 + label:GetStringWidth(), 100)))
 	frame:SetMotionScriptsWhileDisabled(true)
 
-	frame:SetScript("OnClick", OnClick)
-	frame:SetScript("OnEnter", OnEnter)
-	frame:SetScript("OnLeave", OnLeave)
-
-	frame.SetColor = SetValue -- deprecated
-
 	frame.desc = desc
-	frame.GetValue = GetValue
-	frame.SetValue = SetValue
+
+	for name, func in pairs(prototype) do
+		frame[name] = func
+	end
+
+	frame:SetScript("OnClick", frame.OnClick)
+	frame:SetScript("OnEnter", frame.OnEnter)
+	frame:SetScript("OnLeave", frame.OnLeave)
+
+	frame.hasOpacity = hasOpacity
 	frame.cancelFunc = function()
 		frame:SetValue(frame.r, frame.g, frame.b, frame.hasOpacity and frame.opacity or 1)
 	end
-	frame.hasOpacity = hasOpacity
 	frame.opacityFunc = function()
 		local r, g, b = ColorPickerFrame:GetColorRGB()
 		local a = OpacitySliderFrame:GetValue()
