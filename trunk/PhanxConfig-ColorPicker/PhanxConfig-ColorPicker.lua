@@ -63,9 +63,10 @@ function prototype:SetValue(r, g, b, a)
 	self.swatch:SetVertexColor(r, g, b, a)
 	self.bg:SetAlpha(a)
 
-	if self.OnValueChanged then
+	local handler = self.ApplyValue or self.OnValueChanged
+	if handler then
 		-- Ignore updates while ColorPickerFrame:IsShown() if desired.
-		self:OnValueChanged(r, g, b, a)
+		handler(self, r, g, b, a)
 	else
 		-- Deprecated!!!
 		if self.OnColorChanged then
