@@ -14,10 +14,11 @@ local MINOR_VERSION = tonumber(("$Revision$"):match("%d+"))
 local lib, oldminor = LibStub:NewLibrary("PhanxConfig-ColorPicker", MINOR_VERSION)
 if not lib then return end
 
-local prototype = {}
+------------------------------------------------------------------------
 
-function prototype:OnClick()
-	self:OnLeave()
+local scripts = {}
+
+function scripts:OnClick()
 	if ColorPickerFrame:IsShown() then
 		ColorPickerFrame:Hide()
 	else
@@ -28,29 +29,29 @@ function prototype:OnClick()
 	end
 end
 
-function prototype:OnEnter()
+function scripts:OnEnter()
 	local color = NORMAL_FONT_COLOR
 	self.bg:SetVertexColor(color.r, color.g, color.b)
-
-	if self.desc then
+	if self.tooltipText then
 		GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-		GameTooltip:SetText(self.desc, nil, nil, nil, nil, true)
+		GameTooltip:SetText(self.tooltipText, nil, nil, nil, nil, true)
 	end
 end
-
-function prototype:OnLeave()
+function scripts:OnLeave()
 	local color = HIGHLIGHT_FONT_COLOR
 	self.bg:SetVertexColor(color.r, color.g, color.b)
-
 	GameTooltip:Hide()
 end
 
-function prototype:GetValue()
+------------------------------------------------------------------------
+
+local methods = {}
+
+function methods:GetValue()
 	local r, g, b, a = self.swatch:GetVertexColor()
 	return floor(r * 100 + 0.5) / 100, floor(g * 100 + 0.5) / 100, floor(b * 100 + 0.5) / 100, floor(a * 100 + 0.5) / 100
 end
-
-function prototype:SetValue(r, g, b, a)
+function methods:SetValue(r, g, b, a)
 	if type(r) == "table" then
 		r, g, b, a = r.r or r[1], r.g or r[2], r.b or r[3], r.a or r[4]
 	end
@@ -63,27 +64,30 @@ function prototype:SetValue(r, g, b, a)
 	self.swatch:SetVertexColor(r, g, b, a)
 	self.bg:SetAlpha(a)
 
-	local handler = self.ApplyValue or self.OnValueChanged
-	if handler then
+	local func = self.func or self.ApplyValue or self.OnValueChanged
+	if func then
 		-- Ignore updates while ColorPickerFrame:IsShown() if desired.
-		handler(self, r, g, b, a)
-	else
-		-- Deprecated!!!
-		if self.OnColorChanged then
-			-- use this for immediate visual updating
-			self:OnColorChanged(r, g, b, a)
-		end
-		if not ColorPickerFrame:IsShown() and self.PostColorChanged then
-			-- use this for final updating after the color picker closes
-			self:PostColorChanged(r, g, b, a)
-		end
+		func(self, r, g, b, a)
 	end
 end
 
-function lib:New(parent, name, desc, hasOpacity)
-	assert( type(parent) == "table" and parent.CreateFontString, "PhanxConfig-ColorPicker: Parent is not a valid frame!" )
+function methods:GetTooltipText()
+	return self.tooltipText
+end
+function methods:SetTooltipText(text)
+	self.tooltipText = text
+end
+
+function methods:SetFunction(func)
+	self.func = func
+end
+
+------------------------------------------------------------------------
+
+function lib:New(parent, name, tooltipText, hasOpacity)
+	assert(type(parent) == "table" and parent.CreateFontString, "PhanxConfig-ColorPicker: Parent is not a valid frame!")
 	if type(name) ~= "string" then name = nil end
-	if type(desc) ~= "string" then desc = nil end
+	if type(tooltipText) ~= "string" then tooltipText = nil end
 
 	local frame = CreateFrame("Button", nil, parent)
 	frame:SetHeight(26)
@@ -103,21 +107,16 @@ function lib:New(parent, name, desc, hasOpacity)
 	local label = frame:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
 	label:SetPoint("LEFT", swatch, "RIGHT", 7, 0)
 	label:SetHeight(19)
-	label:SetText(name)
 	frame.label = label
 
-	frame:SetWidth(math.min(186, math.max(5 + 16 + 7 + label:GetStringWidth(), 100)))
 	frame:SetMotionScriptsWhileDisabled(true)
-
-	frame.desc = desc
-
-	for name, func in pairs(prototype) do
+	for name, func in pairs(scripts) do
+		frame[name] = func
+		frame:SetScript(name, func)
+	end
+	for name, func in pairs(methods) do
 		frame[name] = func
 	end
-
-	frame:SetScript("OnClick", frame.OnClick)
-	frame:SetScript("OnEnter", frame.OnEnter)
-	frame:SetScript("OnLeave", frame.OnLeave)
 
 	frame.hasOpacity = hasOpacity
 	frame.cancelFunc = function()
@@ -134,6 +133,9 @@ function lib:New(parent, name, desc, hasOpacity)
 		frame:SetValue(r, g, b, a)
 	end
 
+	label:SetText(name)
+	frame.tooltipText = tooltipText
+	frame:SetWidth(math.min(186, math.max(5 + 16 + 7 + label:GetStringWidth(), 100)))
 	return frame
 end
 
