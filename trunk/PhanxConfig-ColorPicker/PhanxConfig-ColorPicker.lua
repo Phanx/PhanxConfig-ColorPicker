@@ -77,10 +77,10 @@ function methods:SetLabel(text)
 	self.labelText:SetText(text)
 end
 
-function methods:GetTooltipText()
+function methods:GetTooltip()
 	return self.tooltipText
 end
-function methods:SetTooltipText(text)
+function methods:SetTooltip(text)
 	self.tooltipText = text
 end
 
