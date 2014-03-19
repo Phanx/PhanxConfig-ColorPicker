@@ -64,10 +64,9 @@ function methods:SetValue(r, g, b, a)
 	self.swatch:SetVertexColor(r, g, b, a)
 	self.bg:SetAlpha(a)
 
-	local func = self.func or self.ApplyValue or self.OnValueChanged
-	if func then
+	if self.Callback then
 		-- Ignore updates while ColorPickerFrame:IsShown() if desired.
-		func(self, r, g, b, a)
+		self:Callback(r, g, b, a)
 	end
 end
 
