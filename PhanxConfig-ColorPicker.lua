@@ -70,15 +70,18 @@ function methods:SetValue(r, g, b, a)
 	end
 end
 
+function methods:GetLabel()
+	return self.labelText:GetText()
+end
+function methods:SetLabel(text)
+	self.labelText:SetText(text)
+end
+
 function methods:GetTooltipText()
 	return self.tooltipText
 end
 function methods:SetTooltipText(text)
 	self.tooltipText = text
-end
-
-function methods:SetFunction(func)
-	self.func = func
 end
 
 ------------------------------------------------------------------------
@@ -106,7 +109,7 @@ function lib:New(parent, name, tooltipText, hasOpacity)
 	local label = frame:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
 	label:SetPoint("LEFT", swatch, "RIGHT", 7, 0)
 	label:SetHeight(19)
-	frame.label = label
+	frame.labelText = label
 
 	frame:SetMotionScriptsWhileDisabled(true)
 	for name, func in pairs(scripts) do
