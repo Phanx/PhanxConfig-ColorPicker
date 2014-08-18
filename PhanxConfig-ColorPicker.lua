@@ -63,9 +63,11 @@ function methods:SetValue(r, g, b, a)
 	self.swatch:SetVertexColor(r, g, b, a)
 	self.bg:SetAlpha(a)
 
-	if self.Callback then
+
+	local callback = self.Callback or self.OnValueChanged
+	if callback then
 		-- Ignore updates while ColorPickerFrame:IsShown() if desired.
-		self:Callback(r, g, b, a)
+		callback(self, r, g, b, a)
 	end
 end
 
