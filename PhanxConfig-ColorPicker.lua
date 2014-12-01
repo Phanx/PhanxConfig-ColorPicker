@@ -39,7 +39,7 @@
 	OTHER DEALINGS IN THE SOFTWARE.
 ----------------------------------------------------------------------]]
 
-local MINOR_VERSION = 176
+local MINOR_VERSION = 20141201
 
 local lib, oldminor = LibStub:NewLibrary("PhanxConfig-ColorPicker", MINOR_VERSION)
 if not lib then return end
@@ -95,7 +95,7 @@ function methods:SetValue(r, g, b, a)
 	self.bg:SetAlpha(a)
 
 
-	local callback = self.Callback or self.OnValueChanged
+	local callback = self.OnValueChanged
 	if callback then
 		-- Ignore updates while ColorPickerFrame:IsShown() if desired.
 		callback(self, r, g, b, a)
