@@ -1,20 +1,16 @@
 --[[--------------------------------------------------------------------
 	PhanxConfig-ColorPicker
 	Simple color picker widget generator. Requires LibStub.
-	Based on OmniCC_Options by Tuller.
 	https://github.com/Phanx/PhanxConfig-ColorPicker
-
-	Copyright (c) 2009-2014 Phanx <addons@phanx.net>. All rights reserved.
+	Copyright (c) 2009-2015 Phanx <addons@phanx.net>. All rights reserved.
 	Feel free to include copies of this file WITHOUT CHANGES inside World of
 	Warcraft addons that make use of it as a library, and feel free to use code
 	from this file in other projects as long as you DO NOT use my name or the
-	original name of this library anywhere in your project outside of an optional
-	credits line -- any modified versions must be renamed to avoid conflicts and
-	confusion. If you wish to do something else, or have questions about whether
-	you can do something, email me at the address listed above.
+	original name of this file anywhere in your project outside of an optional
+	credits line -- any modified versions must be renamed to avoid conflicts.
 ----------------------------------------------------------------------]]
 
-local MINOR_VERSION = 20141201
+local MINOR_VERSION = 150112
 
 local lib, oldminor = LibStub:NewLibrary("PhanxConfig-ColorPicker", MINOR_VERSION)
 if not lib then return end
@@ -42,6 +38,7 @@ function scripts:OnEnter()
 		GameTooltip:SetText(self.tooltipText, nil, nil, nil, nil, true)
 	end
 end
+
 function scripts:OnLeave()
 	local color = HIGHLIGHT_FONT_COLOR
 	self.bg:SetVertexColor(color.r, color.g, color.b)
@@ -56,6 +53,7 @@ function methods:GetValue()
 	local r, g, b, a = self.swatch:GetVertexColor()
 	return floor(r * 100 + 0.5) / 100, floor(g * 100 + 0.5) / 100, floor(b * 100 + 0.5) / 100, floor(a * 100 + 0.5) / 100
 end
+
 function methods:SetValue(r, g, b, a)
 	if type(r) == "table" then
 		r, g, b, a = r.r or r[1], r.g or r[2], r.b or r[3], r.a or r[4]
@@ -69,26 +67,15 @@ function methods:SetValue(r, g, b, a)
 	self.swatch:SetVertexColor(r, g, b, a)
 	self.bg:SetAlpha(a)
 
-
-	local callback = self.OnValueChanged
+	local callback = self.callback or self.OnValueChanged
 	if callback then
 		-- Ignore updates while ColorPickerFrame:IsShown() if desired.
 		callback(self, r, g, b, a)
 	end
 end
 
-function methods:GetLabel()
-	return self.labelText:GetText()
-end
-function methods:SetLabel(text)
-	self.labelText:SetText(text)
-end
-
-function methods:GetTooltip()
-	return self.tooltipText
-end
-function methods:SetTooltip(text)
-	self.tooltipText = text
+function methods:SetCallback(func)
+	self.callback = type(func) == "function" and func or nil
 end
 
 ------------------------------------------------------------------------
@@ -99,28 +86,34 @@ function lib:New(parent, name, tooltipText, hasOpacity)
 	if type(tooltipText) ~= "string" then tooltipText = nil end
 
 	local frame = CreateFrame("Button", nil, parent)
-	frame:SetHeight(26)
-
-	local swatch = frame:CreateTexture(nil, "OVERLAY")
-	swatch:SetTexture("Interface\\ChatFrame\\ChatFrameColorSwatch")
-	swatch:SetPoint("LEFT", 5, 1)
-	swatch:SetSize(17, 18)
-	frame.swatch = swatch
+	frame:SetSize(26, 26)
 
 	local bg = frame:CreateTexture(nil, "BACKGROUND")
-	bg:SetTexture(1, 1, 1)
+	bg:SetTexture("Interface\\BUTTONS\\WHITE8X8")
+	bg:SetVertexColor(0.8, 0.8, 0.8)
 	bg:SetPoint("LEFT", 5, 1)
 	bg:SetSize(16, 16)
 	frame.bg = bg
 
+	local bgi = frame:CreateTexture(nil, "BORDER")
+	bgi:SetTexture("Interface\\BUTTONS\\WHITE8X8")
+	bgi:SetVertexColor(0, 0, 0)
+	bgi:SetPoint("BOTTOMLEFT", bg, 1, 1)
+	bgi:SetPoint("TOPRIGHT", bg, -1, -1)
+	frame.bgInner = bgi
+
+	local swatch = frame:CreateTexture(nil, "OVERLAY")
+	swatch:SetTexture("Interface\\BUTTONS\\WHITE8X8")
+	swatch:SetPoint("BOTTOMLEFT", bgi, 1, 1)
+	swatch:SetPoint("TOPRIGHT", bgi, -1, -1)
+	frame.swatch = swatch
+
 	local label = frame:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-	label:SetPoint("LEFT", swatch, "RIGHT", 7, 0)
-	label:SetHeight(19)
+	label:SetPoint("LEFT", swatch, "RIGHT", 10, 0)
 	frame.labelText = label
 
 	frame:SetMotionScriptsWhileDisabled(true)
 	for name, func in pairs(scripts) do
-		frame[name] = func
 		frame:SetScript(name, func)
 	end
 	for name, func in pairs(methods) do
@@ -143,8 +136,9 @@ function lib:New(parent, name, tooltipText, hasOpacity)
 	end
 
 	label:SetText(name)
+	frame:SetHitRectInsets(0, -1 * max(100, label:GetStringWidth() + 4), 0, 0)
 	frame.tooltipText = tooltipText
-	frame:SetWidth(math.min(186, math.max(5 + 16 + 7 + label:GetStringWidth(), 100)))
+
 	return frame
 end
 
