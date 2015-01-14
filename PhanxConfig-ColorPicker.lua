@@ -10,7 +10,7 @@
 	credits line -- any modified versions must be renamed to avoid conflicts.
 ----------------------------------------------------------------------]]
 
-local MINOR_VERSION = 150112
+local MINOR_VERSION = 20150112
 
 local lib, oldminor = LibStub:NewLibrary("PhanxConfig-ColorPicker", MINOR_VERSION)
 if not lib then return end
@@ -18,17 +18,6 @@ if not lib then return end
 ------------------------------------------------------------------------
 
 local scripts = {}
-
-function scripts:OnClick()
-	if ColorPickerFrame:IsShown() then
-		ColorPickerFrame:Hide()
-	else
-		self.r, self.g, self.b, self.opacity = self:GetValue()
-		OpenColorPicker(self)
-		ColorPickerFrame:SetFrameStrata("TOOLTIP")
-		ColorPickerFrame:Raise()
-	end
-end
 
 function scripts:OnEnter()
 	local color = NORMAL_FONT_COLOR
@@ -43,6 +32,20 @@ function scripts:OnLeave()
 	local color = HIGHLIGHT_FONT_COLOR
 	self.bg:SetVertexColor(color.r, color.g, color.b)
 	GameTooltip:Hide()
+end
+
+function scripts:OnClick(button)
+	if ColorPickerFrame:IsShown() then
+		HideUIPanel(ColorPickerFrame)
+	else
+		self.r, self.g, self.b, self.opacity = self:GetValue()
+		self.opacity = 1 - self.opacity -- oh Blizzard
+		self.opening = true
+		OpenColorPicker(self)
+		ColorPickerFrame:SetFrameStrata("TOOLTIP")
+		ColorPickerFrame:Raise()
+		self.opening = nil
+	end
 end
 
 ------------------------------------------------------------------------
@@ -67,15 +70,11 @@ function methods:SetValue(r, g, b, a)
 	self.swatch:SetVertexColor(r, g, b, a)
 	self.bg:SetAlpha(a)
 
-	local callback = self.callback or self.OnValueChanged
+	local callback = self.OnValueChanged or self.OnColorChanged or self.Callback or self.callback
 	if callback then
 		-- Ignore updates while ColorPickerFrame:IsShown() if desired.
 		callback(self, r, g, b, a)
 	end
-end
-
-function methods:SetCallback(func)
-	self.callback = type(func) == "function" and func or nil
 end
 
 ------------------------------------------------------------------------
@@ -122,16 +121,17 @@ function lib:New(parent, name, tooltipText, hasOpacity)
 
 	frame.hasOpacity = hasOpacity
 	frame.cancelFunc = function()
-		frame:SetValue(frame.r, frame.g, frame.b, frame.hasOpacity and frame.opacity or 1)
+		frame:SetValue(frame.r, frame.g, frame.b, frame.hasOpacity and (1 - frame.opacity) or 1)
 	end
 	frame.opacityFunc = function()
 		local r, g, b = ColorPickerFrame:GetColorRGB()
-		local a = OpacitySliderFrame:GetValue()
+		local a = 1 - OpacitySliderFrame:GetValue()
 		frame:SetValue(r, g, b, a)
 	end
 	frame.swatchFunc = function()
+		if frame.opening then return end
 		local r, g, b = ColorPickerFrame:GetColorRGB()
-		local a = OpacitySliderFrame:GetValue()
+		local a = 1 - OpacitySliderFrame:GetValue()
 		frame:SetValue(r, g, b, a)
 	end
 
