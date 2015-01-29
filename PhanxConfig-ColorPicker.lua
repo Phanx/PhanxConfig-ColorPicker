@@ -20,8 +20,10 @@ if not lib then return end
 local scripts = {}
 
 function scripts:OnEnter()
-	local color = NORMAL_FONT_COLOR
-	self.bg:SetVertexColor(color.r, color.g, color.b)
+	if not self.disabled then
+		local color = NORMAL_FONT_COLOR
+		self.bg:SetVertexColor(color.r, color.g, color.b)
+	end
 	if self.tooltipText then
 		GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
 		GameTooltip:SetText(self.tooltipText, nil, nil, nil, nil, true)
@@ -29,8 +31,10 @@ function scripts:OnEnter()
 end
 
 function scripts:OnLeave()
-	local color = HIGHLIGHT_FONT_COLOR
-	self.bg:SetVertexColor(color.r, color.g, color.b)
+	if not self.disabled then
+		local color = HIGHLIGHT_FONT_COLOR
+		self.bg:SetVertexColor(color.r, color.g, color.b)
+	end
 	GameTooltip:Hide()
 end
 
@@ -46,6 +50,20 @@ function scripts:OnClick(button)
 		ColorPickerFrame:Raise()
 		self.opening = nil
 	end
+end
+
+function scripts:OnDisable()
+	local color = GRAY_FONT_COLOR
+	self.bg:SetVertexColor(color.r, color.g, color.b)
+	self.labelText:SetFontObject(GameFontDisable)
+	self.disabled = true
+end
+
+function scripts:OnEnable()
+	local color = self:IsMouseOver() and NORMAL_FONT_COLOR or HIGHLIGHT_FONT_COLOR
+	self.bg:SetVertexColor(color.r, color.g, color.b)
+	self.labelText:SetFontObject(GameFontHighlight)
+	self.disabled = nil
 end
 
 ------------------------------------------------------------------------
